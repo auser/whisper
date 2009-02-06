@@ -27,6 +27,7 @@ decrypt_from_file(Filename, Priv) ->
 
 encrypt_to_file(Filename, Pub, Msg) ->
     {ok, FP} = file:open(Filename, [write]),
+    io:format(FP, "{ciphertext, ~p}.~n", [encrypt(Pub, Msg)]),
     file:close(FP).
 
 save_key(Filename, Type, Key) ->

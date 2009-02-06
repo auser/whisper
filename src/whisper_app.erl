@@ -3,7 +3,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/2, stop/1, init/1]).
 
 %%====================================================================
 %% Application callbacks
@@ -19,13 +19,7 @@
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
 start(_Type, _StartArgs) ->
-	application:start(crypto),
-  case whisper_sup:start_link() of
-    {ok, Pid} -> 
-      {ok, Pid};
-    Error ->
-      Error
-  end.
+	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%--------------------------------------------------------------------
 %% Function: stop(State) -> void()
@@ -35,6 +29,28 @@ start(_Type, _StartArgs) ->
 %%--------------------------------------------------------------------
 stop(_State) ->
   ok.
+
+
+init([]) -> 
+	application:start(crypto),
+	RestartStrategy = one_for_one,
+	MaxRestarts = 1000,
+	MaxTimeBetRestarts = 3600,
+	TimeoutTime = 5000,
+
+	SupFlags = {RestartStrategy, MaxRestarts, MaxTimeBetRestarts},
+
+	WhisperServer = 
+	{whisper,
+		{whisper, start_link, []}, 
+		permanent, 
+		TimeoutTime, 
+		worker, []
+	},
+
+	LoadServers = [WhisperServer],
+
+	{ok, {SupFlags, LoadServers}}.
 
 %%====================================================================
 %% Internal functions

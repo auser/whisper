@@ -24,6 +24,7 @@ decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
+	io:format("In init for whisper.erl~n"),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%====================================================================
@@ -39,6 +40,7 @@ start_link() ->
 %%--------------------------------------------------------------------
 init([]) ->
 	{{Pub,N}, {Priv,N}} = cryptography:gen_keys(70),
+	io:format("Starting whisper.erl gen_server~n"), 
   {ok, #state{priv_key = Priv, pub_key = Pub, n = N}}.
 
 %%--------------------------------------------------------------------
