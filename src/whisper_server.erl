@@ -1,4 +1,4 @@
--module (key_server).
+-module (whisper_server).
 
 -behaviour(gen_server).
 
@@ -9,7 +9,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {pub_key,priv_key}).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -34,7 +34,8 @@ start_link() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-  {ok, #state{}}.
+	{{Pub,N}, {Priv,N}} = rsa_key:make_sig(70),
+  {ok, #state{priv_key = Priv, pub_key = Pub}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -45,6 +46,12 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({encrypt, Data}, _From, State) ->
+	Pub = State#state.pub_key, Priv = State#state.priv_key,
+	Intermediate = lin:str2int(Data),
+	Reply = ok,
+	{reply, Reply, State};
+	
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.

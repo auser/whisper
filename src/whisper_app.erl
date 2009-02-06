@@ -19,7 +19,8 @@
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
 start(_Type, StartArgs) ->
-  case 'TopSupervisor':start_link(StartArgs) of
+	application:start(crypto),
+  case whisper_sup:start_link(StartArgs) of
     {ok, Pid} -> 
       {ok, Pid};
     Error ->
