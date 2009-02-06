@@ -3,8 +3,8 @@
   {description, "Whisper app"},
   {vsn, "1.0"},
   {id, "whisper"},
-  {modules,      [whisper, cryptography]},
-  {registered,   [whisper, cryptography]},
+  {modules,      [whisper]},
+  {registered,   [whisper]},
   {applications, [kernel, stdlib]},
   %%
   %% mod: Specify the module name to start the application, plus args

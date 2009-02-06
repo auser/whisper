@@ -3,13 +3,18 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, encrypt/1, decrypt/1]).
+-export([start_link/1, start_link/0, encrypt/1, decrypt/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {pub_key,priv_key,n}).
+-record(state, {
+			pub_key,
+			priv_key,
+			n,
+			type % rsa,tls, etc.
+			}).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -24,8 +29,11 @@ decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
+	start_link(rsa).
+	
+start_link(Type) ->
 	io:format("In init for whisper.erl~n"),
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [Type], []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -38,10 +46,10 @@ start_link() ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
-	{{Pub,N}, {Priv,N}} = cryptography:gen_keys(70),
-	io:format("Starting whisper.erl gen_server~n"), 
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N}}.
+init([Type]) ->
+	io:format("In init with ~p~n", [Type]),
+	{Pub,Priv,N} = Type:init(),
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -52,16 +60,12 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({encrypt, Data}, _From, State) ->
-	Pub = State#state.pub_key, N = State#state.n,
-	C = cryptography:encrypt({N, Pub}, Data),
-	Reply = C,
+handle_call({encrypt, Data}, _From, #state{n = N, pub_key = Pub, type = Type} = State) ->
+	Reply = Type:encrypt({N, Pub}, Data),
 	{reply, Reply, State};
 
-handle_call({decrypt, Data}, _From, State) ->
-	Priv = State#state.priv_key, N = State#state.n,
-	Msg = cryptography:decrypt({N, Priv}, Data),
-	Reply = Msg,
+handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} = State) ->
+	Reply = Type:decrypt({N, Priv}, Data),
 	{reply, Reply, State};
 	
 handle_call(_Request, _From, State) ->

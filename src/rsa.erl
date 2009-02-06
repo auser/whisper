@@ -1,11 +1,14 @@
--module (cryptography).
+-module (rsa).
 
 -export([make_sig/1, gen_keys/1, encrypt/2, decrypt/2, 
 	decrypt_from_file/2, encrypt_to_file/3, save_key/3, load_key/2]).
-	
--export ([str2int/1, str2int/2, int2str/1, int2str/2]).
 
+-export ([init/0]).
 % Returns a public and private key
+init() ->
+	{{A,N},{B,N}} = gen_keys(128),
+	{A,B,N}.
+	
 gen_keys(Len) ->
 	make_sig(Len).
 
@@ -15,6 +18,7 @@ encrypt({N, E}, Msg) ->
 		false -> Msg
 	end,
 	List = str2int(ListMess),
+	% List = lists:reverse(ints_to_rxstr(ListMess)),
   crypto:mod_exp(List, E, N).
 
 decrypt({N, D}, Msg) ->
@@ -133,3 +137,14 @@ int2str(N, L) ->
     N1 = N div 256,
     H = N - N1 * 256,
     int2str(N1, [H|L]).
+
+digit_to_xchar(D) when (D >= 0) and (D < 10) ->
+    D + 48;
+digit_to_xchar(D) ->
+    D + 87.
+		
+ints_to_rxstr([], Res) ->
+    Res;
+ints_to_rxstr([N | Ns], Res) ->
+    ints_to_rxstr(Ns, [digit_to_xchar(N rem 16),
+		       digit_to_xchar(N div 16) | Res]).
