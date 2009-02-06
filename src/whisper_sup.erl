@@ -1,0 +1,1 @@
+-module (whisper_sup).
