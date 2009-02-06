@@ -18,9 +18,9 @@
 %% OTP design principles as a supervision tree, this means starting the
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
-start(_Type, StartArgs) ->
+start(_Type, _StartArgs) ->
 	application:start(crypto),
-  case whisper_sup:start_link(StartArgs) of
+  case whisper_sup:start_link() of
     {ok, Pid} -> 
       {ok, Pid};
     Error ->

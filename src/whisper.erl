@@ -1,20 +1,24 @@
--module (whisper_server).
+-module (whisper).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, encrypt/1, decrypt/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {pub_key,priv_key}).
+-record(state, {pub_key,priv_key,n}).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
 %% API
 %%====================================================================
+
+encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
+decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
+
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
@@ -34,8 +38,8 @@ start_link() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-	{{Pub,N}, {Priv,N}} = rsa_key:make_sig(70),
-  {ok, #state{priv_key = Priv, pub_key = Pub}}.
+	{{Pub,N}, {Priv,N}} = cryptography:gen_keys(70),
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -47,9 +51,15 @@ init([]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({encrypt, Data}, _From, State) ->
-	Pub = State#state.pub_key, Priv = State#state.priv_key,
-	Intermediate = lin:str2int(Data),
-	Reply = ok,
+	Pub = State#state.pub_key, N = State#state.n,
+	C = cryptography:encrypt({N, Pub}, Data),
+	Reply = C,
+	{reply, Reply, State};
+
+handle_call({decrypt, Data}, _From, State) ->
+	Priv = State#state.priv_key, N = State#state.n,
+	Msg = cryptography:decrypt({N, Priv}, Data),
+	Reply = Msg,
 	{reply, Reply, State};
 	
 handle_call(_Request, _From, State) ->

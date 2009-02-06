@@ -42,12 +42,12 @@ init([]) ->
 	
 	SupFlags = {RestartStrategy, MaxRestarts, MaxTimeBetRestarts},
 	
-    WhisperServer = {whisper_server, 
-		{whisper_server, start_link, []}, 
+    WhisperServer = {whisper, 
+		{whisper, start_link, []}, 
 		permanent, 
 		TimeoutTime, 
 		worker, 
-		[whisper_server]},
+		[whisper]},
 
     LoadServers = [WhisperServer],
 

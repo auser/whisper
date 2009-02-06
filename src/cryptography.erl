@@ -10,16 +10,16 @@ gen_keys(Len) ->
 	make_sig(Len).
 
 encrypt({N, E}, Msg) ->
-    ENC = fun(Elem) ->
-		  crypto:mod_exp(Elem, E, N)
-	  end,
-    lists:map(ENC, Msg).
+	ListMess = case erlang:is_binary(Msg) of
+		true -> erlang:binary_to_list(Msg);
+		false -> Msg
+	end,
+	List = str2int(ListMess),
+  crypto:mod_exp(List, E, N).
 
 decrypt({N, D}, Msg) ->
-    DEC = fun(Elem) ->
-		  crypto:mod_exp(Elem, D, N)
-	  end,
-    lists:map(DEC, Msg).
+	Decrypted = crypto:mod_exp(Msg, D, N),
+	int2str(Decrypted).
 	  
 decrypt_from_file(Filename, Priv) ->
     {ok, [{ciphertext, Data}]} = file:consult(Filename),
@@ -27,7 +27,6 @@ decrypt_from_file(Filename, Priv) ->
 
 encrypt_to_file(Filename, Pub, Msg) ->
     {ok, FP} = file:open(Filename, [write]),
-    io:format(FP, "{ciphertext, ~p}.~n", [encrypt(Pub, Msg)]),
     file:close(FP).
 
 save_key(Filename, Type, Key) ->
@@ -53,28 +52,20 @@ load_key(Filename, Type) ->
 make_sig(Len) ->
     %% generate two <Len> digit prime numbers
     P = primes:make_prime(Len),
-    io:format("P = ~p~n", [P]),
     Q = primes:make_prime(Len),
-    io:format("Q = ~p~n", [Q]),
     N = P*Q,
-    io:format("N = ~p~n", [N]),
     Phi = (P-1)*(Q-1),
     %% now make B such that B < Phi and gcd(B, Phi) = 1
     B = b(Phi),
-    io:format("Public key (B) = ~p~n", [B]),
     A = inv(B, Phi),
-    io:format("Private key (A) = ~p~n", [A]),
     {{B,N},{A,N}}.
 
 b(Phi) ->
-    io:format("Generating a public key B "),
     K = length(integer_to_list(Phi)) - 1,
     B = b(1, K, Phi),
-    io:format("~n", []),
     B.
 
 b(Try, K, Phi) ->
-    io:format("."),
     B = primes:make(K),
     if 
 	B < Phi ->
