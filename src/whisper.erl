@@ -21,6 +21,13 @@
 %% API
 %%====================================================================
 
+receive_function(From) ->
+	receive
+		Anything ->
+			io:format("Received ~p~n", [Anything]),
+			receive_function(From)
+	end.
+
 encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
 decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
 

@@ -11,7 +11,7 @@ init() ->
 	
 gen_keys(Len) ->
 	make_sig(Len).
-
+ 
 encrypt({N, E}, Msg) ->
 	ListMess = case erlang:is_binary(Msg) of
 		true -> erlang:binary_to_list(Msg);
