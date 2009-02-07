@@ -25,8 +25,10 @@
 receive_function(From) ->
 	receive
 		{data, Socket, Data} ->
-			gen_server:call(self(), {received, Socket, Data}),
-			ok;
+			Receiver = get_receiver(),
+			Unencrypted = decrypt(Data),
+			io:format("Sending unencrypted ~p~n", [Unencrypted]),
+			Receiver ! {data, Socket, Unencrypted};
 		Anything ->
 			io:format("Received ~p~n", [Anything]),
 			receive_function(From)
@@ -34,6 +36,9 @@ receive_function(From) ->
 
 encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
 decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
+
+get_receiver() ->
+	gen_server:call(?SERVER, {get_receiver}).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
@@ -78,7 +83,10 @@ handle_call({encrypt, Data}, _From, #state{n = N, pub_key = Pub, type = Type} = 
 handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} = State) ->
 	Reply = Type:decrypt({N, Priv}, Data),
 	{reply, Reply, State};
-	
+
+handle_call({get_receiver}, _From, #state{receiver = Receiver} = State) ->
+	{reply, Receiver, State};
+
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
