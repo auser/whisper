@@ -13,6 +13,7 @@
 			pub_key,
 			priv_key,
 			n,
+			receiver, % layers
 			type % rsa,tls, etc.
 			}).
 -define(SERVER, ?MODULE).
@@ -23,6 +24,9 @@
 
 receive_function(From) ->
 	receive
+		{data, Socket, Data} ->
+			gen_server:call(self(), {received, Socket, Data}),
+			ok;
 		Anything ->
 			io:format("Received ~p~n", [Anything]),
 			receive_function(From)
@@ -53,10 +57,10 @@ start_link(Type) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Type]) ->
-	io:format("In init with ~p~n", [Type]),
+init([ReceiverFunction]) ->	
+	Type = utils:get_app_env(type, rsa),
 	{Pub,Priv,N} = Type:init(),
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type}}.
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver = ReceiverFunction}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
