@@ -1,4 +1,4 @@
--module (utils).
+-module (whisper_utils).
 
 -export ([get_app_env/2]).
 

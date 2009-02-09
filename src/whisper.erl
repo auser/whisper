@@ -63,7 +63,7 @@ start_link(Type) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([ReceiverFunction]) ->	
-	Type = utils:get_app_env(type, rsa),
+	Type = whisper_utils:get_app_env(type, rsa),
 	{Pub,Priv,N} = Type:init(),
   {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver = ReceiverFunction}}.
 
