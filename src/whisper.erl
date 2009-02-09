@@ -1,27 +1,15 @@
 -module (whisper).
 
--behaviour(gen_server).
+-behaviour(application).
 
-%% API
--export([start_link/1, start_link/0, encrypt/1, decrypt/1]).
-
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3]).
-
--record(state, {
-			pub_key,
-			priv_key,
-			n,
-			receiver, % layers
-			type % rsa,tls, etc.
-			}).
--define(SERVER, ?MODULE).
+%% API callbacks
+-export([encrypt/1, decrypt/1]).
+%% Application callbacks
+-export([start/2, stop/1, init/1]).
 
 %%====================================================================
-%% API
+%% Application callbacks
 %%====================================================================
-
 receive_function(From) ->
 	receive
 		{data, Socket, Data} ->
@@ -34,98 +22,54 @@ receive_function(From) ->
 			receive_function(From)
 	end.
 
-encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
-decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
-
-get_receiver() ->
-	gen_server:call(?SERVER, {get_receiver}).
+encrypt(Msg) -> whisper_server:encrypt(Msg).
+decrypt(Msg) -> whisper_server:decrypt(Msg).
+get_receiver() -> whisper_server:get_receiver().
 
 %%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
+%% Function: start(Type, StartArgs) -> {ok, Pid} |
+%%                                     {ok, Pid, State} |
+%%                                     {error, Reason}
+%% Description: This function is called whenever an application
+%% is started using application:start/1,2, and should start the processes
+%% of the application. If the application is structured according to the
+%% OTP design principles as a supervision tree, this means starting the
+%% top supervisor of the tree.
 %%--------------------------------------------------------------------
-start_link() ->
-	start_link(rsa).
-	
-start_link(Type) ->
-	io:format("In init for whisper.erl~n"),
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Type], []).
-
-%%====================================================================
-%% gen_server callbacks
-%%====================================================================
+start(_Type, Config) ->
+	supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]).
 
 %%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
+%% Function: stop(State) -> void()
+%% Description: This function is called whenever an application
+%% has stopped. It is intended to be the opposite of Module:start/2 and
+%% should do any necessary cleaning up. The return value is ignored.
 %%--------------------------------------------------------------------
-init([ReceiverFunction]) ->	
-	Type = whisper_utils:get_app_env(type, rsa),
-	{Pub,Priv,N} = Type:init(),
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver = ReceiverFunction}}.
-
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
-handle_call({encrypt, Data}, _From, #state{n = N, pub_key = Pub, type = Type} = State) ->
-	Reply = Type:encrypt({N, Pub}, Data),
-	{reply, Reply, State};
-
-handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} = State) ->
-	Reply = Type:decrypt({N, Priv}, Data),
-	{reply, Reply, State};
-
-handle_call({get_receiver}, _From, #state{receiver = Receiver} = State) ->
-	{reply, Receiver, State};
-
-handle_call(_Request, _From, State) ->
-  Reply = ok,
-  {reply, Reply, State}.
-
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-  {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
-handle_info(_Info, State) ->
-  {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+stop(_State) ->
   ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
-code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
 
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
+init([Config]) -> 
+	application:start(crypto),
+	RestartStrategy = one_for_one,
+	MaxRestarts = 1000,
+	MaxTimeBetRestarts = 3600,
+	TimeoutTime = 5000,
+
+	SupFlags = {RestartStrategy, MaxRestarts, MaxTimeBetRestarts},
+
+	WhisperServer = 
+	{whisper,
+		{whisper_server, start_link, [Config]}, 
+		permanent, 
+		TimeoutTime, 
+		worker, []
+	},
+
+	LoadServers = [WhisperServer],
+
+	{ok, {SupFlags, LoadServers}}.
+
+%%====================================================================
+%% Internal functions
+%%====================================================================

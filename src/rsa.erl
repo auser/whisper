@@ -3,10 +3,14 @@
 -export([make_sig/1, gen_keys/1, encrypt/2, decrypt/2, 
 	decrypt_from_file/2, encrypt_to_file/3, save_key/3, load_key/2]).
 
--export ([init/0]).
+-export ([init/0, init/1]).
 % Returns a public and private key
 init() ->
 	{{A,N},{B,N}} = gen_keys(128),
+	{A,B,N}.
+
+init(Len) ->
+	{{A,N},{B,N}} = gen_keys(Len),
 	{A,B,N}.
 	
 gen_keys(Len) ->
