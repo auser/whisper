@@ -67,7 +67,7 @@ init([Config]) ->
 	Type = whisper_utils:get_app_env(type, rsa),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver = Config, receive_function=Fun}}.
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=undefined, receive_function=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -87,8 +87,8 @@ handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} 
 	{reply, Reply, State};
 
 handle_call({get_receiver}, _From, #state{receive_function = RecFun, receiver = Pid} = State) ->	
-	Receiver = whisper_utils:running_receiver(Pid, RecFun),
-	{reply, Receiver, State};
+	ReceiverPid = whisper_utils:running_receiver(Pid, RecFun),
+	{reply, ReceiverPid, State#state{receiver = ReceiverPid}};
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
