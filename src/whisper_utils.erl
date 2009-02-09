@@ -1,6 +1,6 @@
 -module (whisper_utils).
 
--export ([get_app_env/2]).
+-export ([get_app_env/2, running_receiver/2]).
 
 % Get the environment
 get_app_env(Opt, Default) ->
