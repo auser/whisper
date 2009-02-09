@@ -6,7 +6,6 @@
 -export ([init/0, init/1]).
 % Returns a public and private key
 init() ->
-	application:start(crypto),
 	{{A,N},{B,N}} = gen_keys(128),
 	{A,B,N}.
 

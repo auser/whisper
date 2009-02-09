@@ -12,7 +12,7 @@
 %%====================================================================
 receive_function(From) ->
 	receive
-		{data, Socket, Data} ->
+		{data, Socket, {data, Data}} ->
 			Receiver = get_receiver(),
 			Unencrypted = decrypt(Data),
 			io:format("Sending unencrypted ~p~n", [Unencrypted]),
