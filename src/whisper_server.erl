@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, start_link/0, encrypt/1, decrypt/1]).
+-export([start_link/1, start_link/0, encrypt/1, decrypt/1, get_receiver/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
