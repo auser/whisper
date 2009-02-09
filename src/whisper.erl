@@ -3,7 +3,7 @@
 -behaviour(application).
 
 %% API callbacks
--export([encrypt/1, decrypt/1]).
+-export([encrypt/1, decrypt/1, receive_function/1]).
 %% Application callbacks
 -export([start/2, stop/1, init/1]).
 
