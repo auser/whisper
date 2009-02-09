@@ -5,7 +5,7 @@
   {id, "whisper"},
   {modules,      [whisper]},
   {registered,   [whisper]},
-  {applications, [kernel, stdlib, crypto]},
+  {applications, [kernel, stdlib, sasl, crypto]},
   %%
   %% mod: Specify the module name to start the application, plus args
   %%

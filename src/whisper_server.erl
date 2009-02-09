@@ -64,6 +64,7 @@ start_link(Config) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Config]) ->	
+	application:start(crypto),
 	Type = whisper_utils:get_app_env(type, rsa),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),

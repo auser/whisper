@@ -50,7 +50,6 @@ stop(_State) ->
 
 
 init([Config]) -> 
-	crypto:start(),
 	RestartStrategy = one_for_one,
 	MaxRestarts = 1000,
 	MaxTimeBetRestarts = 3600,
