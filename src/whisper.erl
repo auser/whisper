@@ -14,6 +14,9 @@ receive_function(From) ->
 	receive
 		{data, Socket, Msg} ->
 			case Msg of
+				{echo, Mess} ->
+					From ! {bounce, Socket, Mess},
+					receive_function(From);
 				{keyreq} ->
 					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
 					io:format("Requested pub key and salt from ~p~n", [Socket]),
