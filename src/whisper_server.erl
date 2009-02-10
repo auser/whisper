@@ -4,8 +4,8 @@
 
 %% API
 -export([start_link/1, start_link/0, encrypt/1, decrypt/1, get_receiver/0]).
--export ([change_pub_key/1, change_priv_key/1]).
--export ([get_pub_key/0, get_priv_key/0]).
+-export ([change_pub_key/1, change_priv_key/1, change_salt/1]).
+-export ([get_pub_key/0, get_priv_key/0, get_salt/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -28,6 +28,8 @@ change_pub_key(Key) -> gen_server:cast(?SERVER, {pub_key_change, Key}).
 get_pub_key() -> gen_server:call(?SERVER, {get_pub_key}).
 change_priv_key(Key) -> gen_server:cast(?SERVER, {priv_key_change, Key}).
 get_priv_key() -> gen_server:call(?SERVER, {get_priv_key}).
+change_salt(Salt) -> gen_server:cast(?SERVER, {salt_change, Salt}).
+get_salt() -> gen_server:call(?SERVER, {get_salt}).
 
 encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
 decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
@@ -92,6 +94,7 @@ handle_call({get_receiver}, _From, #state{receive_function = RecFun, receiver = 
 
 handle_call({get_pub_key}, _From, #state{pub_key=Pub} = State) -> {reply, Pub, State};
 handle_call({get_priv_key}, _From, #state{priv_key=Priv} = State) -> {reply, Priv, State};
+handle_call({get_salt}, _From, #state{n=Salt} = State) -> {reply, Salt, State};
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
@@ -105,6 +108,7 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({pub_key_change, Key}, State) -> {noreply, State#state{pub_key = Key}};
 handle_cast({priv_key_change, Key}, State) -> {noreply, State#state{priv_key = Key}};
+handle_cast({salt_change, Salt}, State) -> {noreply, State#state{n = Salt}};
 	
 handle_cast(_Msg, State) ->
   {noreply, State}.
