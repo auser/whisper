@@ -4,6 +4,8 @@
 
 %% API
 -export([start_link/1, start_link/0, encrypt/1, decrypt/1, get_receiver/0]).
+-export ([change_pub_key/1, change_priv_key/1]).
+-export ([get_pub_key/0, get_priv_key/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -22,18 +24,10 @@
 %%====================================================================
 %% API
 %%====================================================================
-
-receive_function(From) ->
-	receive
-		{data, Socket, Data} ->
-			Receiver = get_receiver(),
-			Unencrypted = decrypt(Data),
-			io:format("Sending unencrypted ~p~n", [Unencrypted]),
-			Receiver ! {data, Socket, Unencrypted};
-		Anything ->
-			io:format("Received ~p~n", [Anything]),
-			receive_function(From)
-	end.
+change_pub_key(Key) -> gen_server:cast(?SERVER, {pub_key_change, Key}).
+get_pub_key() -> gen_server:call(?SERVER, {get_pub_key}).
+change_priv_key(Key) -> gen_server:cast(?SERVER, {priv_key_change, Key}).
+get_priv_key() -> gen_server:call(?SERVER, {get_priv_key}).
 
 encrypt(Msg) -> gen_server:call(?SERVER, {encrypt, Msg}).
 decrypt(Msg) -> gen_server:call(?SERVER, {decrypt, Msg}).
@@ -49,7 +43,6 @@ start_link() ->
 	start_link(rsa).
 	
 start_link(Config) ->
-	io:format("In init for whisper.erl~n"),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Config], []).
 
 %%====================================================================
@@ -68,7 +61,12 @@ init([Config]) ->
 	Type = whisper_utils:get_app_env(type, rsa),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=undefined, receive_function=Fun}}.
+	io:format("Fun: ~p~n", [Fun]),
+	Receiver = case Fun of
+		{} -> undefined;
+		_ -> whisper_utils:running_receiver(undefined, Fun)
+	end,
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=Receiver, receive_function=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -89,7 +87,11 @@ handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} 
 
 handle_call({get_receiver}, _From, #state{receive_function = RecFun, receiver = Pid} = State) ->	
 	ReceiverPid = whisper_utils:running_receiver(Pid, RecFun),
+	io:format("In whisper_server: ReceiverPid = ~p and ~p~n", [ReceiverPid, RecFun]),
 	{reply, ReceiverPid, State#state{receiver = ReceiverPid}};
+
+handle_call({get_pub_key}, _From, #state{pub_key=Pub} = State) -> {reply, Pub, State};
+handle_call({get_priv_key}, _From, #state{priv_key=Priv} = State) -> {reply, Priv, State};
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
@@ -101,6 +103,9 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
+handle_cast({pub_key_change, Key}, State) -> {noreply, State#state{pub_key = Key}};
+handle_cast({priv_key_change, Key}, State) -> {noreply, State#state{priv_key = Key}};
+	
 handle_cast(_Msg, State) ->
   {noreply, State}.
 

@@ -12,13 +12,12 @@
 %%====================================================================
 receive_function(From) ->
 	receive
-		{data, Socket, {data, Data}} ->
+		{data, Socket, Msg} ->
 			Receiver = get_receiver(),
+			{data, Data} = Msg,
 			Unencrypted = decrypt(Data),
-			io:format("Sending unencrypted ~p~n", [Unencrypted]),
-			Receiver ! {data, Socket, Unencrypted};
+			Receiver ! {data, Socket, {data, Unencrypted}};
 		Anything ->
-			io:format("Received ~p~n", [Anything]),
 			receive_function(From)
 	end.
 
