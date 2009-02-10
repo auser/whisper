@@ -17,7 +17,8 @@ receive_function(From) ->
 				{keyreq} ->
 					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
 					io:format("Requested pub key and salt from ~p~n", [Socket]),
-					gen_tcp:send(Socket, converse_packet:encode({keyset, PubKey, Salt})),
+					% gen_tcp:send(Socket, converse_packet:encode({keyset, PubKey, Salt})),
+					Receiver ! {bounce, Socket, {keyset, PubKey, Salt}},
 					receive_function(From);
 				{keyset,K,S} ->
 					io:format("Update pub key and salt~n"),
