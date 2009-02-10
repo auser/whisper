@@ -13,10 +13,17 @@
 receive_function(From) ->
 	receive
 		{data, Socket, Msg} ->
-			Receiver = get_receiver(),
-			{data, Data} = Msg,
-			Unencrypted = decrypt(Data),
-			Receiver ! {data, Socket, {data, Unencrypted}};
+			case Msg of
+				{keyreq} ->
+					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
+					converse:send_to_open(Socket, {keyset, PubKey, Salt});
+				{keyset, K,S} ->
+					whisper_server:change_pub_key(K), whisper_server:change_salt(S);
+				{data, Data} ->
+					Receiver = get_receiver(),
+					Unencrypted = decrypt(Data),
+					Receiver ! {data, Socket, {data, Unencrypted}}
+			end;
 		Anything ->
 			receive_function(From)
 	end.
