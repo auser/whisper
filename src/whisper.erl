@@ -27,7 +27,7 @@ receive_function(From) ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
 					Receiver ! {data, Socket, {data, Unencrypted}},
-					receive_function(From);
+					receive_function(From)
 			end;
 		Anything ->
 			receive_function(From)
