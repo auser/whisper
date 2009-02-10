@@ -16,11 +16,13 @@ receive_function(From) ->
 			case Msg of
 				{keyreq} ->
 					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
-					io:format("Requested pub key and salt~n"),
-					converse:send_to_open(Socket, {keyset, PubKey, Salt});
-				{keyset, K,S} ->
+					io:format("Requested pub key and salt from ~p~n", [Socket]),
+					converse:send_to_open(Socket, {keyset, PubKey, Salt}),
+					receive_function(From);
+				{keyset,K,S} ->
 					io:format("Update pub key and salt~n"),
-					whisper_server:change_pub_key(K), whisper_server:change_salt(S);
+					whisper_server:change_pub_key(K), whisper_server:change_salt(S),
+					receive_function(From);
 				{data, Data} ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
