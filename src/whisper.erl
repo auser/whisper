@@ -3,40 +3,40 @@
 -behaviour(application).
 
 %% API callbacks
--export([encrypt/1, decrypt/1, receive_function/1]).
+-export([encrypt/1, decrypt/1, layers_receive/1]).
 %% Application callbacks
 -export([start/2, stop/1, init/1]).
 
 %%====================================================================
 %% Application callbacks
 %%====================================================================
-receive_function(From) ->
+layers_receive(From) ->
 	receive
 		{data, Socket, Msg} ->
 			case Msg of
 				{echo, Mess} ->
 					From ! {bounce, Socket, Mess},
-					receive_function(From);
+					layers_receive(From);
 				{keyreq} ->
 					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
 					io:format("Requested pub key and salt from ~p~n", [Socket]),
 					% gen_tcp:send(Socket, converse_packet:encode({keyset, PubKey, Salt})),
 					converse:send_to_open(Socket, {keyset, PubKey, Salt}),
 					% From ! {bounce, Socket, {keyset, PubKey, Salt}},
-					receive_function(From);
+					layers_receive(From);
 				{keyset,K,S} ->
 					io:format("Update pub key and salt~n"),
 					whisper_server:change_pub_key(K), 
 					whisper_server:change_salt(S),
-					receive_function(From);
+					layers_receive(From);
 				{data, Data} ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
 					Receiver ! {data, Socket, {data, Unencrypted}},
-					receive_function(From)
+					layers_receive(From)
 			end;
 		Anything ->
-			receive_function(From)
+			layers_receive(From)
 	end.
 
 encrypt(Msg) -> whisper_server:encrypt(Msg).

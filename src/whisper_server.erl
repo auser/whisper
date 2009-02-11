@@ -16,7 +16,7 @@
 			priv_key,
 			n,
 			receiver, % layers
-			receive_function,
+			layers_receive,
 			type % rsa,tls, etc.
 			}).
 -define(SERVER, ?MODULE).
@@ -68,7 +68,7 @@ init([Config]) ->
 		{} -> undefined;
 		_ -> whisper_utils:running_receiver(undefined, Fun)
 	end,
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=Receiver, receive_function=Fun}}.
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=Receiver, layers_receive=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -87,7 +87,7 @@ handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} 
 	Reply = Type:decrypt({N, Priv}, Data),
 	{reply, Reply, State};
 
-handle_call({get_receiver}, _From, #state{receive_function = RecFun, receiver = Pid} = State) ->	
+handle_call({get_receiver}, _From, #state{layers_receive = RecFun, receiver = Pid} = State) ->	
 	ReceiverPid = whisper_utils:running_receiver(Pid, RecFun),
 	io:format("In whisper_server: ReceiverPid = ~p and ~p~n", [ReceiverPid, RecFun]),
 	{reply, ReceiverPid, State#state{receiver = ReceiverPid}};
