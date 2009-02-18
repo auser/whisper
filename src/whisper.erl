@@ -78,7 +78,7 @@ init([Config]) ->
 		{whisper_server, start_link, [Config]}, 
 		permanent, 
 		TimeoutTime, 
-		worker, []
+		worker, [whisper_server]
 	},
 
 	LoadServers = [WhisperServer],

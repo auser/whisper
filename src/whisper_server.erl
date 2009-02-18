@@ -112,7 +112,8 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+	io:format("Received ~p in ~p~n", [Info, ?MODULE]),
   {noreply, State}.
 
 %%--------------------------------------------------------------------
