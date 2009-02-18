@@ -1,4 +1,0 @@
-Layers
-------
-
-Every layer in the application must implement the start function and the send_function.
