@@ -10,7 +10,7 @@
 %%====================================================================
 %% Application callbacks
 %%====================================================================
-layers_receive(From) ->
+layers_receive() ->
 	receive
 		{data, Socket, Msg} ->
 			case Msg of
@@ -20,21 +20,20 @@ layers_receive(From) ->
 					% gen_tcp:send(Socket, converse_packet:encode({keyset, PubKey, Salt})),
 					converse:send_to_open(Socket, {keyset, PubKey, Salt}),
 					% From ! {bounce, Socket, {keyset, PubKey, Salt}},
-					layers_receive(From);
+					layers_receive();
 				{keyset,K,S} ->
 					io:format("Update pub key and salt~n"),
 					whisper_server:change_pub_key(K), 
 					whisper_server:change_salt(S),
-					layers_receive(From);
+					layers_receive();
 				{data, Data} ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
-					layers:pass()
-					Receiver ! {data, Socket, {data, Unencrypted}},
-					layers_receive(From)
+					layers:pass(Receiver, {data, Socket, Unencrypted}),
+					layers_receive()
 			end;
 		Anything ->
-			layers_receive(From)
+			layers_receive()
 	end.
 
 encrypt(Msg) -> whisper_server:encrypt(Msg).
@@ -54,7 +53,7 @@ get_receiver() -> whisper_server:get_receiver().
 start(_Type, Config) ->
 	layers:start_bundle([
 		{"Whisper supervisor", fun() -> supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]) end}
-	]).	
+	]).
 
 %%--------------------------------------------------------------------
 %% Function: stop(State) -> void()

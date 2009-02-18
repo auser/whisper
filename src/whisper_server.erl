@@ -45,11 +45,6 @@ start_link() ->
 	start_link(rsa).
 	
 start_link(Config) ->
-	layers:start_bundle([
-		{"Whisper applications", fun() -> [application:start(A) || A <- ?APPLICATIONS_TO_START] end},
-		{"Converse supervisor", fun() -> converse_sup:start_link() end},
-		{"Converse listener", fun() -> converse_listener_sup:start_link(?MODULE, Config) end}
-	]).
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Config], []).
 
 %%====================================================================
@@ -88,7 +83,7 @@ handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} 
 	{reply, Reply, State};
 
 handle_call({get_receiver}, _From, #state{successor_mfa = RecFun} = State) ->	
-	{reply, RecFun, State}};
+	{reply, RecFun, State};
 
 handle_call({get_pub_key}, _From, #state{pub_key=Pub} = State) -> {reply, Pub, State};
 handle_call({get_priv_key}, _From, #state{priv_key=Priv} = State) -> {reply, Priv, State};
