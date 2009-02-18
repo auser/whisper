@@ -3,7 +3,7 @@
 -behaviour(application).
 
 %% API callbacks
--export([encrypt/1, decrypt/1, layers_receive/1]).
+-export([encrypt/1, decrypt/1, layers_receive/0]).
 %% Application callbacks
 -export([start/2, stop/1, init/1]).
 
@@ -14,9 +14,6 @@ layers_receive(From) ->
 	receive
 		{data, Socket, Msg} ->
 			case Msg of
-				{echo, Mess} ->
-					From ! {bounce, Socket, Mess},
-					layers_receive(From);
 				{keyreq} ->
 					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
 					io:format("Requested pub key and salt from ~p~n", [Socket]),
@@ -32,6 +29,7 @@ layers_receive(From) ->
 				{data, Data} ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
+					layers:pass()
 					Receiver ! {data, Socket, {data, Unencrypted}},
 					layers_receive(From)
 			end;
@@ -54,7 +52,9 @@ get_receiver() -> whisper_server:get_receiver().
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
 start(_Type, Config) ->
-	supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]).
+	layers:start_bundle([
+		{"Whisper supervisor", fun() -> supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]) end}
+	]).	
 
 %%--------------------------------------------------------------------
 %% Function: stop(State) -> void()

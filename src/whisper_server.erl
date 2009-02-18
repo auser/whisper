@@ -15,11 +15,11 @@
 			pub_key,
 			priv_key,
 			n,
-			receiver, % layers
-			layers_receive,
+			successor_mfa, % layers
 			type % rsa,tls, etc.
 			}).
 -define(SERVER, ?MODULE).
+-define(APPLICATIONS_TO_START, [crypto]).
 
 %%====================================================================
 %% API
@@ -45,6 +45,11 @@ start_link() ->
 	start_link(rsa).
 	
 start_link(Config) ->
+	layers:start_bundle([
+		{"Whisper applications", fun() -> [application:start(A) || A <- ?APPLICATIONS_TO_START] end},
+		{"Converse supervisor", fun() -> converse_sup:start_link() end},
+		{"Converse listener", fun() -> converse_listener_sup:start_link(?MODULE, Config) end}
+	]).
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Config], []).
 
 %%====================================================================
@@ -59,16 +64,11 @@ start_link(Config) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Config]) ->	
-	application:start(crypto),
 	Type = whisper_utils:get_app_env(type, rsa),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),
 	io:format("Fun: ~p~n", [Fun]),
-	Receiver = case Fun of
-		{} -> undefined;
-		_ -> whisper_utils:running_receiver(undefined, Fun)
-	end,
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, receiver=Receiver, layers_receive=Fun}}.
+  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -87,10 +87,8 @@ handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} 
 	Reply = Type:decrypt({N, Priv}, Data),
 	{reply, Reply, State};
 
-handle_call({get_receiver}, _From, #state{layers_receive = RecFun, receiver = Pid} = State) ->	
-	ReceiverPid = whisper_utils:running_receiver(Pid, RecFun),
-	io:format("In whisper_server: ReceiverPid = ~p and ~p~n", [ReceiverPid, RecFun]),
-	{reply, ReceiverPid, State#state{receiver = ReceiverPid}};
+handle_call({get_receiver}, _From, #state{successor_mfa = RecFun} = State) ->	
+	{reply, RecFun, State}};
 
 handle_call({get_pub_key}, _From, #state{pub_key=Pub} = State) -> {reply, Pub, State};
 handle_call({get_priv_key}, _From, #state{priv_key=Priv} = State) -> {reply, Priv, State};
