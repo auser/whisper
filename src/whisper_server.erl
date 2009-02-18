@@ -46,7 +46,7 @@ start_link() ->
 	
 start_link(Config) ->
 	NewConfig = lists:append([{enc_type, rsa}], Config),
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [NewConfig], []).
+  gen_server:start_link({local, ?MODULE}, ?MODULE, [NewConfig], []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -63,7 +63,7 @@ init([Config]) ->
 	Type = config:parse(enc_type, Config),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),
-	io:format("Fun: ~p~n", [Fun]),
+	io:format("Whisper fun: ~p~n", [Fun]),
   {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------

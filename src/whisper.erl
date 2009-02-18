@@ -51,9 +51,10 @@ get_receiver() -> whisper_server:get_receiver().
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
 start(_Type, Config) ->
-	layers:start_bundle([
-		{"Whisper supervisor", fun() -> supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]) end}
-	]).
+	% layers:start_bundle([
+	% 	{"Whisper supervisor", fun() -> supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]) end}
+	% ]).
+	supervisor:start_link({local, ?MODULE}, ?MODULE, [Config]).
 
 %%--------------------------------------------------------------------
 %% Function: stop(State) -> void()
