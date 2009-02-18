@@ -45,7 +45,8 @@ start_link() ->
 	start_link(rsa).
 	
 start_link(Config) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Config], []).
+	NewConfig = lists:append([{enc_type, rsa}], Config),
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [NewConfig], []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -59,7 +60,7 @@ start_link(Config) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Config]) ->	
-	Type = whisper_utils:get_app_env(type, rsa),
+	Type = config:parse(enc_type, Config),
 	Fun = config:parse(successor, Config),
 	{Pub,Priv,N} = Type:init(),
 	io:format("Fun: ~p~n", [Fun]),
