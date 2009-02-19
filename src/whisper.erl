@@ -31,9 +31,8 @@ layers_receive() ->
 					Unencrypted = decrypt(Data),
 					layers:pass(Receiver, {data, Socket, Unencrypted}),
 					layers_receive();
-				{data, Data} ->
-					Receiver = get_receiver(),
-					layers:pass(Receiver, {data, Socket, Data}),
+				Anything ->
+					layers_log:info("Error. This traffic is encrypted. Please encrypt your traffic and try again~n"),
 					layers_receive()
 			end;
 		Anything ->
