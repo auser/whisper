@@ -61,10 +61,10 @@ start_link(Config) ->
 %%--------------------------------------------------------------------
 init([Config]) ->	
 	Type = config:parse(enc_type, Config),
-	Fun = config:parse(successor, Config),
-	layers:register_process(Fun, whereis(?MODULE)),
+	Fun = config:parse(successor, Config),	
 	{Pub,Priv,N} = Type:init(),
 	io:format("Whisper fun: ~p~n", [Fun]),	
+	layers:register_process(Fun, self()),
   {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------
