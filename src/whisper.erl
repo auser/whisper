@@ -26,10 +26,14 @@ layers_receive() ->
 					whisper_server:change_pub_key(K), 
 					whisper_server:change_salt(S),
 					layers_receive();
-				{data, Data} ->
+				{data, Data} when is_integer(Data) ->
 					Receiver = get_receiver(),
 					Unencrypted = decrypt(Data),
 					layers:pass(Receiver, {data, Socket, Unencrypted}),
+					layers_receive();
+				{data, Data} ->
+					Receiver = get_receiver(),
+					layers:pass(Receiver, {data, Socket, Data}),
 					layers_receive()
 			end;
 		Anything ->
@@ -75,7 +79,7 @@ init([Config]) ->
 	SupFlags = {RestartStrategy, MaxRestarts, MaxTimeBetRestarts},
 
 	WhisperServer = 
-	{whisper,
+	{whisper_server,
 		{whisper_server, start_link, [Config]}, 
 		permanent, 
 		TimeoutTime, 
