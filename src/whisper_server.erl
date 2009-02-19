@@ -61,7 +61,10 @@ start_link(Config) ->
 %%--------------------------------------------------------------------
 init([Config]) ->	
 	Type = config:parse(enc_type, Config),
-	Fun = config:parse(successor, Config),	
+	Fun = case config:parse(successor, Config) of
+		{} -> [?MODULE];
+		A -> A
+	end,
 	{Pub,Priv,N} = Type:init(),
 	io:format("Whisper fun: ~p~n", [Fun]),	
 	layers:register_process(Fun, self()),
