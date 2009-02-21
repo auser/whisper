@@ -66,8 +66,7 @@ init([Config]) ->
 		A -> A
 	end,
 	{Pub,Priv,N} = Type:init(),
-	io:format("Whisper fun: ~p~n", [Fun]),	
-	layers:register_process(Fun, self()),
+	io:format("Whisper fun: ~p~n", [Fun]),
   {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------

@@ -3,42 +3,21 @@
 -behaviour(application).
 
 %% API callbacks
--export([encrypt/1, decrypt/1, layers_receive/0]).
+-export([encrypt/1, decrypt/1, layers_receive/1]).
 %% Application callbacks
 -export([start/2, stop/1, init/1]).
 
 %%====================================================================
 %% Application callbacks
 %%====================================================================
-layers_receive() ->
-	receive
-		{data, Socket, Msg} ->
-			case Msg of
-				{keyreq} ->
-					PubKey = whisper_server:get_pub_key(), Salt = whisper_server:get_salt(),
-					io:format("Requested pub key and salt from ~p~n", [Socket]),
-					% gen_tcp:send(Socket, converse_packet:encode({keyset, PubKey, Salt})),
-					converse:send_to_open(Socket, {keyset, PubKey, Salt}),
-					% From ! {bounce, Socket, {keyset, PubKey, Salt}},
-					layers_receive();
-				{keyset,K,S} ->
-					io:format("Update pub key and salt~n"),
-					whisper_server:change_pub_key(K), 
-					whisper_server:change_salt(S),
-					layers_receive();
-				{data, Data} when is_integer(Data) ->
-					Receiver = get_receiver(),
-					Unencrypted = decrypt(Data),
-					layers:pass(Receiver, {data, Socket, Unencrypted}),
-					layers_receive();
-				Anything ->
-					layers_log:info("Error. This traffic is encrypted. Please encrypt your traffic and try again~n"),
-					layers_receive()
-			end;
-		Anything ->
-			layers_receive()
-	end.
+layers_receive({data, Data}) when is_integer(Data) ->
+	Receiver = get_receiver(),
+	Unencrypted = decrypt(Data),
+	layers:pass(Receiver, {data, Unencrypted});
 
+layers_receive(Msg) ->
+	io:format("Received plain message ~p~n", [Msg]).
+	
 encrypt(Msg) -> whisper_server:encrypt(Msg).
 decrypt(Msg) -> whisper_server:decrypt(Msg).
 get_receiver() -> whisper_server:get_receiver().
