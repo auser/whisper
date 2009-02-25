@@ -10,10 +10,13 @@
 %%====================================================================
 %% Application callbacks
 %%====================================================================
-layers_receive({data, Socket, Data}) when is_integer(Data) ->
-	Receiver = get_receiver(),
-	Unencrypted = decrypt(Data),
-	layers:pass(Receiver, {data, Unencrypted});
+layers_receive(Msg) ->
+  case Msg of
+    {data, Socket, Data} ->
+      Receiver = get_receiver(),
+    	Unencrypted = decrypt(list_to_integer(Data)),
+    	layers:pass(Receiver, {data, Unencrypted})
+  end	
 
 layers_receive(Msg) ->
 	io:format("Received plain message ~p~n", [Msg]).
