@@ -10,7 +10,7 @@
 %%====================================================================
 %% Application callbacks
 %%====================================================================
-layers_receive({data, Data}) when is_integer(Data) ->
+layers_receive({data, Socket, Data}) when is_integer(Data) ->
 	Receiver = get_receiver(),
 	Unencrypted = decrypt(Data),
 	layers:pass(Receiver, {data, Unencrypted});
