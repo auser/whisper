@@ -16,10 +16,7 @@ layers_receive(Msg) ->
       Receiver = get_receiver(),
     	Unencrypted = decrypt(list_to_integer(Data)),
     	layers:pass(Receiver, {data, Unencrypted})
-  end	
-
-layers_receive(Msg) ->
-	io:format("Received plain message ~p~n", [Msg]).
+  end.
 	
 encrypt(Msg) -> whisper_server:encrypt(Msg).
 decrypt(Msg) -> whisper_server:decrypt(Msg).
