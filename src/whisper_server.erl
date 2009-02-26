@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, start_link/0, encrypt/1, decrypt/1, get_receiver/0]).
+-export([start_link/1, encrypt/1, decrypt/1, get_receiver/0]).
 -export ([change_pub_key/1, change_priv_key/1, change_salt/1]).
 -export ([get_pub_key/0, get_priv_key/0, get_salt/0]).
 
@@ -41,9 +41,6 @@ get_receiver() ->
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link() ->
-	start_link(rsa).
-	
 start_link(Config) ->
 	NewConfig = lists:append([{enc_type, rsa}], Config),
   gen_server:start_link({local, ?MODULE}, ?MODULE, [NewConfig], []).
@@ -65,9 +62,9 @@ init([Config]) ->
 		{} -> [?MODULE];
 		A -> A
 	end,
-	{Pub,Priv,N} = Type:init(),
+	Type:init(),
 	io:format("Whisper fun: ~p~n", [Fun]),
-  {ok, #whisper_state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
+  {ok, #whisper_state{type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -79,11 +76,11 @@ init([Config]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({encrypt, Data}, _From, #whisper_state{n = N, pub_key = Pub, type = Type} = State) ->
-	Reply = Type:encrypt({N, Pub}, Data),
+	Reply = Type:encrypt(Data),
 	{reply, Reply, State};
 
 handle_call({decrypt, Data}, _From, #whisper_state{n = N, priv_key = Priv, type = Type} = State) ->
-	Reply = Type:decrypt({N, Priv}, Data),
+	Reply = Type:decrypt(Data),
 	{reply, Reply, State};
 
 handle_call({get_receiver}, _From, #whisper_state{successor_mfa = RecFun} = State) ->	
