@@ -15,7 +15,7 @@ layers_receive(Msg) ->
     {data, Socket, Data} ->
       Receiver = get_receiver(),
     	Unencrypted = decrypt(list_to_integer(Data)),
-    	layers:pass(Receiver, {data, Unencrypted})
+    	layers:pass(Receiver, {data, Socket, Unencrypted})
   end.
 	
 encrypt(Msg) -> whisper_server:encrypt(Msg).

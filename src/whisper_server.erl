@@ -11,7 +11,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {
+-record(whisper_state, {
 			pub_key,
 			priv_key,
 			n,
@@ -67,7 +67,7 @@ init([Config]) ->
 	end,
 	{Pub,Priv,N} = Type:init(),
 	io:format("Whisper fun: ~p~n", [Fun]),
-  {ok, #state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
+  {ok, #whisper_state{priv_key = Priv, pub_key = Pub, n = N, type = Type, successor_mfa=Fun}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -78,20 +78,20 @@ init([Config]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({encrypt, Data}, _From, #state{n = N, pub_key = Pub, type = Type} = State) ->
+handle_call({encrypt, Data}, _From, #whisper_state{n = N, pub_key = Pub, type = Type} = State) ->
 	Reply = Type:encrypt({N, Pub}, Data),
 	{reply, Reply, State};
 
-handle_call({decrypt, Data}, _From, #state{n = N, priv_key = Priv, type = Type} = State) ->
+handle_call({decrypt, Data}, _From, #whisper_state{n = N, priv_key = Priv, type = Type} = State) ->
 	Reply = Type:decrypt({N, Priv}, Data),
 	{reply, Reply, State};
 
-handle_call({get_receiver}, _From, #state{successor_mfa = RecFun} = State) ->	
+handle_call({get_receiver}, _From, #whisper_state{successor_mfa = RecFun} = State) ->	
 	{reply, RecFun, State};
 
-handle_call({get_pub_key}, _From, #state{pub_key=Pub} = State) -> {reply, Pub, State};
-handle_call({get_priv_key}, _From, #state{priv_key=Priv} = State) -> {reply, Priv, State};
-handle_call({get_salt}, _From, #state{n=Salt} = State) -> {reply, Salt, State};
+handle_call({get_pub_key}, _From, #whisper_state{pub_key=Pub} = State) -> {reply, Pub, State};
+handle_call({get_priv_key}, _From, #whisper_state{priv_key=Priv} = State) -> {reply, Priv, State};
+handle_call({get_salt}, _From, #whisper_state{n=Salt} = State) -> {reply, Salt, State};
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
@@ -103,9 +103,9 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({pub_key_change, Key}, State) -> {noreply, State#state{pub_key = Key}};
-handle_cast({priv_key_change, Key}, State) -> {noreply, State#state{priv_key = Key}};
-handle_cast({salt_change, Salt}, State) -> {noreply, State#state{n = Salt}};
+handle_cast({pub_key_change, Key}, State) -> {noreply, State#whisper_state{pub_key = Key}};
+handle_cast({priv_key_change, Key}, State) -> {noreply, State#whisper_state{priv_key = Key}};
+handle_cast({salt_change, Salt}, State) -> {noreply, State#whisper_state{n = Salt}};
 	
 handle_cast(_Msg, State) ->
   {noreply, State}.
@@ -132,7 +132,7 @@ terminate(_Reason, _State) ->
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
+%% Description: Convert process whisper_state when code is changed
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
