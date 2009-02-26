@@ -15,7 +15,11 @@ layers_receive(Msg) ->
     {data, Socket, Data} ->
       io:format("Received ~p in ~p~n", [Data, ?MODULE]),
       Receiver = get_receiver(),
-    	Unencrypted = decrypt(list_to_integer(Data)),
+      SafeData = case is_list(Data) of
+        true -> list_to_integer(Data);
+        false -> Data
+      end,
+    	Unencrypted = decrypt(SafeData),
     	layers:pass(Receiver, {data, Socket, Unencrypted})
   end.
 	
