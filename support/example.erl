@@ -1,5 +1,5 @@
 % send
-whisper:start(normal, []).
+whisper:start(normal, [{successor, whisper}]).
 String = "Welcome back Kotter".
 EncryptedMessage = whisper:encrypt(String).
 Term = {data, EncryptedMessage}.
