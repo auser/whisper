@@ -15,11 +15,7 @@ encrypt(Opaque)->
 	BinOpaque = term_to_binary(Opaque),
 	ListOpaque = binary_to_list(BinOpaque),
 	MAC = crypto:sha_mac(secret_key(),BinOpaque),
-	Final=encode_base64(ListOpaque)++"--"++encode_base64(binary_to_list(MAC)),
-	if length(Final) > 4096 ->
-		{error, toobig};
-	 true -> Final
-	end.
+	encode_base64(ListOpaque)++"--"++encode_base64(binary_to_list(MAC)).
 
 decrypt(String) ->
 	[BinOpaque64, MACL64] = string:tokens(String, "--"),
