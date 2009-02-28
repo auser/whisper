@@ -12,10 +12,11 @@
 %%====================================================================
 layers_receive(Msg) ->
   case Msg of
-    {data, Socket, Data} ->
+    {converse_raw_packet, Socket, Data} ->
       Receiver = get_receiver(),
-    	Unencrypted = decrypt(Data),
-    	layers:pass(Receiver, {data, Socket, Unencrypted})
+    	Unencrypted = prepare_to_pass(Data),
+    	layers:pass(Receiver, {whisper, Socket, Unencrypted});
+    Else -> ok
   end.
 	
 encrypt(Msg) -> whisper_server:encrypt(Msg).
@@ -71,3 +72,8 @@ init([Config]) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
+prepare_to_pass(Tuple) when is_tuple(Tuple) ->
+  {Key, Val} = Tuple,
+  {Key, prepare_to_pass(erlang:element(erlang:size(Tuple), Tuple))};
+prepare_to_pass(List) when is_list(List) -> decrypt(List).
